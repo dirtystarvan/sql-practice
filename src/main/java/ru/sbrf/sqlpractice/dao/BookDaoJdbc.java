@@ -8,6 +8,7 @@ import ru.sbrf.sqlpractice.dto.Book;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,24 +36,57 @@ public class BookDaoJdbc implements BookDao {
 
     @Override
     public void update(Book book) {
+        Map<String, Object> params = new HashMap<>(1);
+        params.put("id", book.getId());
+        params.put("author", book.getAuthor());
+        params.put("genre", book.getGenre());
+        params.put("name", book.getName());
 
+        jdbc.update("update books set" +
+                        " name = :name,\n" +
+                        " author = :author,\n" +
+                        " genre = :genre\n" +
+                        "where id = :id",
+                params);
     }
 
     @Override
-    public void deleteById(long book) {
-
+    public void deleteById(long id) {
+        Map<String, Object> params = new HashMap<>(1);
+        params.put("id", id);
+        jdbc.update("DELETE FROM books WHERE id = :id", params);
     }
 
     @Override
     public List<Book> getAll() {
-        return null;
+        return jdbc.query("select * from books", new BooksExtractor());
     }
 
     private class BookExtractor implements ResultSetExtractor<Book> {
         @Override
         public Book extractData(ResultSet resultSet) throws SQLException, DataAccessException {
-            resultSet.next();
-            return new Book(resultSet.getInt())
+            List<Book> books = new BooksExtractor().extractData(resultSet);
+            return books.isEmpty() ? null : books.get(0);
+        }
+    }
+
+    private class BooksExtractor implements ResultSetExtractor<List<Book>> {
+        @Override
+        public List<Book> extractData(ResultSet resultSet) throws SQLException, DataAccessException {
+            Map<Integer, Book> books = new HashMap<>();
+
+            while (resultSet.next()) {
+                Book book = books.get(resultSet.getInt("id"));
+                if (book == null) {
+                    book = new Book(resultSet.getInt("id"),
+                            resultSet.getString("name"),
+                            resultSet.getString("author"),
+                            resultSet.getString("genre"));
+
+                    books.put(resultSet.getInt("id"), book);
+                }
+            }
+            return new ArrayList<>(books.values());
         }
     }
 }
