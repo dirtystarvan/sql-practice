@@ -21,7 +21,7 @@ public class BookDaoJdbcTest {
 
     @Test
     void insertBookTest() {
-        Book book = new Book(5, "SomeTestBook", "SomeTestAuthor", "SomeTestGenre");
+        Book book = new Book(5, "SomeTestBook", 1, 1);
         bookJdbc.create(book);
 
         Book result = bookJdbc.getById(5);

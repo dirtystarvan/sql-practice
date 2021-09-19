@@ -17,6 +17,15 @@ import java.util.Map;
 public class BookDaoJdbc implements BookDao {
     private final NamedParameterJdbcOperations jdbc;
 
+    private final String selectQuery =
+            "SELECT Book.id id," +
+                    "Book.name name" +
+                    "Author.first_name author" +
+                    "Genre.name genre" +
+            "FROM Book" +
+                    "JOIN author ON Book.author = Author.id" +
+                    "JOIN genre ON Book.genre = Genre.id";
+
     public BookDaoJdbc(NamedParameterJdbcOperations jdbc) {
         this.jdbc = jdbc;
     }
@@ -25,28 +34,46 @@ public class BookDaoJdbc implements BookDao {
     public Book getById(long id) {
         Map<String, Object> params = new HashMap<>(1);
         params.put("id", id);
-        return jdbc.query("select * from books where id = :id",
+        return jdbc.query(selectQuery + "WHERE id = :id",
                 params, new BookExtractor());
     }
 
     @Override
     public void create(Book book) {
+        List<Long> id = jdbc.query("SELECT max(id) FROM Book", (resultSet, i) -> resultSet.getLong("id"));
+        Map<String, Object> params = new HashMap<>();
+        params.put("id", id.get(0));
+        params.put("name", book.getName());
+        params.put("author", book.getAuthor());
+        params.put("genre", book.getGenre());
 
+        jdbc.update("INSERT INTO Book (" +
+                " Id,\n" +
+                " Name,\n" +
+                " Author,\n" +
+                " Genre\n" +
+                ")" +
+                "   VALUES ( " +
+                " :id,\n" +
+                " :name,\n" +
+                " :author,\n" +
+                " :genre\n" +
+                ")", params);
     }
 
     @Override
     public void update(Book book) {
-        Map<String, Object> params = new HashMap<>(1);
+        Map<String, Object> params = new HashMap<>();
         params.put("id", book.getId());
+        params.put("name", book.getName());
         params.put("author", book.getAuthor());
         params.put("genre", book.getGenre());
-        params.put("name", book.getName());
 
-        jdbc.update("update books set" +
+        jdbc.update("UPDATE Book SET" +
                         " name = :name,\n" +
                         " author = :author,\n" +
                         " genre = :genre\n" +
-                        "where id = :id",
+                        "WHERE id = :id",
                 params);
     }
 
@@ -54,12 +81,12 @@ public class BookDaoJdbc implements BookDao {
     public void deleteById(long id) {
         Map<String, Object> params = new HashMap<>(1);
         params.put("id", id);
-        jdbc.update("DELETE FROM books WHERE id = :id", params);
+        jdbc.update("DELETE FROM Book WHERE id = :id", params);
     }
 
     @Override
     public List<Book> getAll() {
-        return jdbc.query("select * from books", new BooksExtractor());
+        return jdbc.query(selectQuery, new BooksExtractor());
     }
 
     private class BookExtractor implements ResultSetExtractor<Book> {
@@ -73,19 +100,20 @@ public class BookDaoJdbc implements BookDao {
     private class BooksExtractor implements ResultSetExtractor<List<Book>> {
         @Override
         public List<Book> extractData(ResultSet resultSet) throws SQLException, DataAccessException {
-            Map<Integer, Book> books = new HashMap<>();
+            Map<Long, Book> books = new HashMap<>();
 
             while (resultSet.next()) {
-                Book book = books.get(resultSet.getInt("id"));
+                Book book = books.get(resultSet.getLong("id"));
                 if (book == null) {
-                    book = new Book(resultSet.getInt("id"),
+                    book = new Book(resultSet.getLong("id"),
                             resultSet.getString("name"),
-                            resultSet.getString("author"),
-                            resultSet.getString("genre"));
+                            resultSet.getInt("author"),
+                            resultSet.getInt("genre"));
 
-                    books.put(resultSet.getInt("id"), book);
+                    books.put(resultSet.getLong("id"), book);
                 }
             }
+
             return new ArrayList<>(books.values());
         }
     }

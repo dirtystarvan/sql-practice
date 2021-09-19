@@ -1,26 +1,26 @@
 package ru.sbrf.sqlpractice.dto;
 
 public class Book {
-    private int id;
+    private Long id;
     private String name;
-    private String author;
-    private String genre;
+    private Integer author;
+    private Integer genre;
 
     public Book() {
     }
 
-    public Book(int id, String name, String author, String genre) {
+    public Book(long id, String name, Integer author, Integer genre) {
         this.id = id;
         this.name = name;
         this.author = author;
         this.genre = genre;
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -32,19 +32,19 @@ public class Book {
         this.name = name;
     }
 
-    public String getAuthor() {
+    public Integer getAuthor() {
         return author;
     }
 
-    public void setAuthor(String author) {
+    public void setAuthor(int author) {
         this.author = author;
     }
 
-    public String getGenre() {
+    public Integer getGenre() {
         return genre;
     }
 
-    public void setGenre(String genre) {
+    public void setGenre(int genre) {
         this.genre = genre;
     }
 
